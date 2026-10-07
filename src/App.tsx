@@ -13,6 +13,7 @@ import { LearningPathsPage } from './pages/LearningPathsPage';
 import { ArchitecturePage } from './pages/ArchitecturePage';
 import { ProjectsPage } from './pages/ProjectsPage';
 import { AdrsPage } from './pages/AdrsPage';
+import { NotesPage } from './pages/NotesPage';
 import { ResourcesPage } from './pages/ResourcesPage';
 import { JobHuntPage } from './pages/JobHuntPage';
 import { SaaPage } from './pages/SaaPage';
@@ -25,8 +26,75 @@ import { BackupRestorePage } from './pages/BackupRestorePage';
 export const App: React.FC = () => {
   const { loading } = useStorage();
   useTheme(); // Initializes daily changing / custom theme variables
-  const [currentTab, setCurrentTab] = useState<NavigationTab>('dashboard');
+
+  const getInitialTab = (): NavigationTab => {
+    const path = window.location.pathname.replace(/^\//, '').toLowerCase();
+    if (path === 'notes') return 'notes';
+    if (
+      [
+        'mission',
+        'roadmap',
+        'paths',
+        'architecture',
+        'projects',
+        'adrs',
+        'resources',
+        'jobhunt',
+        'saa',
+        'achievements',
+        'progress',
+        'skippup',
+        'settings',
+        'backup'
+      ].includes(path)
+    ) {
+      return path as NavigationTab;
+    }
+    return 'dashboard';
+  };
+
+  const [currentTab, setCurrentTab] = useState<NavigationTab>(getInitialTab);
   const [showGlobalMissionRunner, setShowGlobalMissionRunner] = useState(false);
+
+  const handleSelectTab = (tab: NavigationTab) => {
+    setCurrentTab(tab);
+    const newPath = tab === 'dashboard' ? '/' : `/${tab}`;
+    if (window.location.pathname !== newPath) {
+      window.history.pushState(null, '', newPath);
+    }
+  };
+
+  React.useEffect(() => {
+    const handlePopState = () => {
+      const path = window.location.pathname.replace(/^\//, '').toLowerCase();
+      if (path === 'notes') {
+        setCurrentTab('notes');
+      } else if (
+        [
+          'mission',
+          'roadmap',
+          'paths',
+          'architecture',
+          'projects',
+          'adrs',
+          'resources',
+          'jobhunt',
+          'saa',
+          'achievements',
+          'progress',
+          'skippup',
+          'settings',
+          'backup'
+        ].includes(path)
+      ) {
+        setCurrentTab(path as NavigationTab);
+      } else {
+        setCurrentTab('dashboard');
+      }
+    };
+    window.addEventListener('popstate', handlePopState);
+    return () => window.removeEventListener('popstate', handlePopState);
+  }, []);
 
   if (loading) {
     return (
@@ -55,8 +123,8 @@ export const App: React.FC = () => {
       case 'dashboard':
         return (
           <DashboardPage
-            onNavigate={(tab) => setCurrentTab(tab)}
-            onNavigateToMilestone={(id) => setCurrentTab('roadmap')}
+            onNavigate={(tab) => handleSelectTab(tab)}
+            onNavigateToMilestone={(id) => handleSelectTab('roadmap')}
           />
         );
       case 'mission':
@@ -71,6 +139,8 @@ export const App: React.FC = () => {
         return <ProjectsPage />;
       case 'adrs':
         return <AdrsPage />;
+      case 'notes':
+        return <NotesPage />;
       case 'resources':
         return <ResourcesPage />;
       case 'jobhunt':
@@ -90,8 +160,8 @@ export const App: React.FC = () => {
       default:
         return (
           <DashboardPage
-            onNavigate={(tab) => setCurrentTab(tab)}
-            onNavigateToMilestone={(id) => setCurrentTab('roadmap')}
+            onNavigate={(tab) => handleSelectTab(tab)}
+            onNavigateToMilestone={(id) => handleSelectTab('roadmap')}
           />
         );
     }
@@ -100,7 +170,7 @@ export const App: React.FC = () => {
   return (
     <div className="app-container">
       {/* Fixed Left Navigation Sidebar */}
-      <Sidebar currentTab={currentTab} onSelectTab={(tab) => setCurrentTab(tab)} />
+      <Sidebar currentTab={currentTab} onSelectTab={handleSelectTab} />
 
       {/* Main Content Area */}
       <div className="main-content">

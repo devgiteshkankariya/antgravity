@@ -1,4 +1,4 @@
-import { UserProfile, ADR, ProjectEntry, SaaTopic, Achievement, JobApplication } from '../types';
+import { UserProfile, ADR, ProjectEntry, SaaTopic, Achievement, JobApplication, PersonalNote } from '../types';
 
 export const INITIAL_USER_PROFILE: UserProfile = {
   name: 'Senior Backend Engineer',
@@ -239,4 +239,31 @@ export const INITIAL_ACHIEVEMENTS: Achievement[] = [
   { id: 'ach-day-70', title: 'Day 70 Checkpoint', description: 'Deploy OpenTelemetry tracing, SLOs, and survive chaos drill', icon: '🔬', xpAward: 500, unlocked: false },
   { id: 'ach-rag-builder', title: 'AI Engineer', description: 'Build documentation RAG query service with pgvector', icon: '🧠', xpAward: 250, unlocked: false },
   { id: 'ach-day-90', title: 'Job-Switch Ready!', description: 'Complete all 13 weeks of Phase 1: Portfolio, SAA & mock interviews', icon: '👑', xpAward: 1000, unlocked: false }
+];
+
+export const INITIAL_PERSONAL_NOTES: PersonalNote[] = [
+  {
+    id: 'note-1',
+    title: 'TypeScript Generics & Conditional Types',
+    content: 'Generics allow us to create reusable, type-safe components. When combined with conditional types (`T extends U ? X : Y`) and the `infer` keyword, we can extract inner return types or promise resolved types cleanly.\n\nExample:\ntype Awaited<T> = T extends Promise<infer R> ? R : T;',
+    tags: ['TypeScript'],
+    createdAt: '2026-10-06T10:00:00.000Z',
+    updatedAt: '2026-10-06T10:00:00.000Z'
+  },
+  {
+    id: 'note-2',
+    title: 'Idempotency Key Pattern for Distributed APIs',
+    content: 'For payment processing and order submissions, client passes an `Idempotency-Key` header with a UUID v4.\n\nWorkflow:\n1. Server checks Redis/Postgres for the key with atomic SETNX.\n2. If key exists and status is IN_PROGRESS, return 409 or wait.\n3. If status is COMPLETED, return cached response directly.\n4. If new, process transaction in database and save response with 24h TTL.',
+    tags: ['Architecture', 'Node.js'],
+    createdAt: '2026-10-06T14:30:00.000Z',
+    updatedAt: '2026-10-06T14:30:00.000Z'
+  },
+  {
+    id: 'note-3',
+    title: 'AWS Well-Architected Framework: Reliability Pillar',
+    content: 'Key architectural questions to ask:\n1. How does your system recover from component failure?\n2. Are you using exponential backoff with jitter on retries to avoid thundering herds?\n3. Is your database multi-AZ with automatic failover?\n4. What is your RTO (Recovery Time Objective) and RPO (Recovery Point Objective)?',
+    tags: ['AWS', 'Architecture'],
+    createdAt: '2026-10-07T08:15:00.000Z',
+    updatedAt: '2026-10-07T08:15:00.000Z'
+  }
 ];

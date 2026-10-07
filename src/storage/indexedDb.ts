@@ -8,16 +8,25 @@ import {
   SaaTopic,
   SystemDesignCase,
   Achievement,
-  DailyArchitectureProgress
+  DailyArchitectureProgress,
+  PersonalNote
 } from '../types';
-import { INITIAL_USER_PROFILE, INITIAL_ADRS, INITIAL_PROJECTS, INITIAL_SAA_TOPICS, INITIAL_ACHIEVEMENTS, INITIAL_JOB_APPLICATIONS } from '../data/initialData';
+import {
+  INITIAL_USER_PROFILE,
+  INITIAL_ADRS,
+  INITIAL_PROJECTS,
+  INITIAL_SAA_TOPICS,
+  INITIAL_ACHIEVEMENTS,
+  INITIAL_JOB_APPLICATIONS,
+  INITIAL_PERSONAL_NOTES
+} from '../data/initialData';
 import { INITIAL_MILESTONES } from '../curriculum/phases';
 import { SYSTEM_DESIGN_CASES } from '../curriculum/systemDesign';
 import { INITIAL_RESOURCES } from '../resources/resourcesData';
 import { INITIAL_ARCHITECTURE_LESSONS } from '../curriculum/dailyArchitecture';
 
 const DB_NAME = 'ArchitectureQuestDB';
-const DB_VERSION = 3;
+const DB_VERSION = 4;
 
 export interface AppDataBackup {
   version: number;
@@ -33,6 +42,7 @@ export interface AppDataBackup {
   achievements: Achievement[];
   dailyHistory: { date: string; tasksCompleted: number; xpEarned: number }[];
   architectureLessons?: DailyArchitectureProgress[];
+  personalNotes?: PersonalNote[];
 }
 
 export class QuestDB {
@@ -79,6 +89,9 @@ export class QuestDB {
         }
         if (!db.objectStoreNames.contains('architectureLessons')) {
           db.createObjectStore('architectureLessons', { keyPath: 'id' });
+        }
+        if (!db.objectStoreNames.contains('personalNotes')) {
+          db.createObjectStore('personalNotes', { keyPath: 'id' });
         }
       };
 
@@ -193,6 +206,7 @@ export class QuestDB {
     achievements: Achievement[];
     dailyHistory: { date: string; tasksCompleted: number; xpEarned: number }[];
     architectureLessons: DailyArchitectureProgress[];
+    personalNotes: PersonalNote[];
   }> {
     const db = await this.open();
 
@@ -273,6 +287,13 @@ export class QuestDB {
       await this.putAll('architectureLessons', architectureLessons);
     }
 
+    // Check Personal Notes
+    let personalNotes = await this.getAll<PersonalNote>('personalNotes');
+    if (personalNotes.length === 0) {
+      personalNotes = [...INITIAL_PERSONAL_NOTES];
+      await this.putAll('personalNotes', personalNotes);
+    }
+
     return {
       profile,
       milestones,
@@ -284,7 +305,8 @@ export class QuestDB {
       systemDesign,
       achievements,
       dailyHistory,
-      architectureLessons
+      architectureLessons,
+      personalNotes
     };
   }
 
@@ -292,7 +314,7 @@ export class QuestDB {
   async exportBackup(): Promise<AppDataBackup> {
     const data = await this.initializeDatabase();
     return {
-      version: 2,
+      version: 3,
       exportedAt: new Date().toISOString(),
       ...data
     };
@@ -340,6 +362,13 @@ export class QuestDB {
       await this.putAll('architectureLessons', backup.architectureLessons);
     } else {
       await this.putAll('architectureLessons', INITIAL_ARCHITECTURE_LESSONS);
+    }
+
+    await this.clear('personalNotes');
+    if (backup.personalNotes && backup.personalNotes.length > 0) {
+      await this.putAll('personalNotes', backup.personalNotes);
+    } else {
+      await this.putAll('personalNotes', INITIAL_PERSONAL_NOTES);
     }
   }
 }

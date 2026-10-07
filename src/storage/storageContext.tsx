@@ -9,7 +9,8 @@ import {
   SaaTopic,
   SystemDesignCase,
   Achievement,
-  DailyArchitectureProgress
+  DailyArchitectureProgress,
+  PersonalNote
 } from '../types';
 import { questDB, AppDataBackup } from './indexedDb';
 import {
@@ -18,7 +19,8 @@ import {
   INITIAL_PROJECTS,
   INITIAL_SAA_TOPICS,
   INITIAL_ACHIEVEMENTS,
-  INITIAL_JOB_APPLICATIONS
+  INITIAL_JOB_APPLICATIONS,
+  INITIAL_PERSONAL_NOTES
 } from '../data/initialData';
 import { INITIAL_MILESTONES } from '../curriculum/phases';
 import { SYSTEM_DESIGN_CASES } from '../curriculum/systemDesign';
@@ -38,6 +40,7 @@ interface StorageContextType {
   achievements: Achievement[];
   dailyHistory: { date: string; tasksCompleted: number; xpEarned: number }[];
   architectureLessons: DailyArchitectureProgress[];
+  personalNotes: PersonalNote[];
 
   // Active state
   activeMilestone: Milestone | undefined;
@@ -66,6 +69,8 @@ interface StorageContextType {
   updateSaaTopic: (id: string, updates: Partial<SaaTopic>) => Promise<void>;
   updateSystemDesignCase: (id: string, updates: Partial<SystemDesignCase>) => Promise<void>;
   unlockAchievement: (id: string) => Promise<void>;
+  saveNote: (note: PersonalNote) => Promise<PersonalNote>;
+  deleteNote: (id: string) => Promise<void>;
 
   // Backup & Reset
   exportBackup: () => Promise<AppDataBackup>;
@@ -88,6 +93,7 @@ export const StorageProvider: React.FC<{ children: ReactNode }> = ({ children })
   const [achievements, setAchievements] = useState<Achievement[]>(INITIAL_ACHIEVEMENTS);
   const [dailyHistory, setDailyHistory] = useState<{ date: string; tasksCompleted: number; xpEarned: number }[]>([]);
   const [architectureLessons, setArchitectureLessons] = useState<DailyArchitectureProgress[]>(INITIAL_ARCHITECTURE_LESSONS);
+  const [personalNotes, setPersonalNotes] = useState<PersonalNote[]>(INITIAL_PERSONAL_NOTES);
 
   // Load from IndexedDB on initial mount
   useEffect(() => {
@@ -106,6 +112,9 @@ export const StorageProvider: React.FC<{ children: ReactNode }> = ({ children })
         if (data.dailyHistory) setDailyHistory(data.dailyHistory);
         if (data.architectureLessons && data.architectureLessons.length > 0) {
           setArchitectureLessons(data.architectureLessons);
+        }
+        if (data.personalNotes && data.personalNotes.length > 0) {
+          setPersonalNotes(data.personalNotes);
         }
       } catch (err) {
         console.error('Failed to initialize IndexedDB, defaulting to initial state:', err);
@@ -382,6 +391,44 @@ export const StorageProvider: React.FC<{ children: ReactNode }> = ({ children })
     await questDB.put('systemDesign', updatedCases[idx]);
   };
 
+  const saveNote = async (note: PersonalNote): Promise<PersonalNote> => {
+    const idx = personalNotes.findIndex((n) => n.id === note.id);
+    const now = new Date().toISOString();
+    let updatedNote: PersonalNote;
+    let updatedList: PersonalNote[];
+
+    if (idx !== -1) {
+      // Preserve original createdAt, update only updatedAt
+      updatedNote = {
+        ...note,
+        createdAt: personalNotes[idx].createdAt || note.createdAt || now,
+        updatedAt: now
+      };
+      updatedList = [...personalNotes];
+      updatedList[idx] = updatedNote;
+    } else {
+      // New note
+      const newId = note.id || `note-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`;
+      updatedNote = {
+        ...note,
+        id: newId,
+        createdAt: note.createdAt || now,
+        updatedAt: now
+      };
+      updatedList = [updatedNote, ...personalNotes];
+    }
+
+    setPersonalNotes(updatedList);
+    await questDB.put('personalNotes', updatedNote);
+    return updatedNote;
+  };
+
+  const deleteNote = async (id: string): Promise<void> => {
+    const updated = personalNotes.filter((n) => n.id !== id);
+    setPersonalNotes(updated);
+    await questDB.delete('personalNotes', id);
+  };
+
   const unlockAchievement = async (id: string) => {
     const ach = achievements.find((a) => a.id === id);
     if (!ach || ach.unlocked) return;
@@ -597,6 +644,7 @@ export const StorageProvider: React.FC<{ children: ReactNode }> = ({ children })
     setAchievements(data.achievements);
     setDailyHistory(data.dailyHistory);
     setArchitectureLessons(data.architectureLessons || []);
+    setPersonalNotes(data.personalNotes || []);
   };
 
   const resetToDefaults = async () => {
@@ -619,6 +667,7 @@ export const StorageProvider: React.FC<{ children: ReactNode }> = ({ children })
         achievements,
         dailyHistory,
         architectureLessons,
+        personalNotes,
         activeMilestone,
         nextMilestone,
         activeArchitectureLesson,
@@ -635,6 +684,8 @@ export const StorageProvider: React.FC<{ children: ReactNode }> = ({ children })
         updateSaaTopic,
         updateSystemDesignCase,
         unlockAchievement,
+        saveNote,
+        deleteNote,
         exportBackup,
         importBackup,
         resetToDefaults

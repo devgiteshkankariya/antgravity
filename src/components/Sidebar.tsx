@@ -14,7 +14,8 @@ import {
   BarChart3,
   Sliders,
   DatabaseBackup,
-  Layers
+  Layers,
+  FileText
 } from 'lucide-react';
 
 export type NavigationTab =
@@ -25,6 +26,7 @@ export type NavigationTab =
   | 'architecture'
   | 'projects'
   | 'adrs'
+  | 'notes'
   | 'resources'
   | 'jobhunt'
   | 'saa'
@@ -48,6 +50,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ currentTab, onSelectTab }) => 
     { id: 'architecture', label: 'System Design', icon: <Cpu size={18} />, badge: '10 Cases' },
     { id: 'projects', label: 'Projects & Code', icon: <FolderGit2 size={18} />, badge: 'Evolving' },
     { id: 'adrs', label: 'ADR Records', icon: <FileCode2 size={18} /> },
+    { id: 'notes', label: 'Notes', icon: <FileText size={18} /> },
     { id: 'resources', label: 'Curated Resources', icon: <Library size={18} /> },
     { id: 'jobhunt', label: 'Job Hunt', icon: <Briefcase size={18} />, badge: 'Day 55+' },
     { id: 'saa', label: 'AWS SAA Tracker', icon: <Award size={18} /> },
